@@ -35,8 +35,8 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            perccyking/meea-icey:latest
-            perccyking/meea-icey:${{ github.sha }}
+            meeaicey/meea-icey:latest
+            meeaicey/meea-icey:${{ github.sha }}
 
       - name: Logout from DockerHub
         run: docker logout 
