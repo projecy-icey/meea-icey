@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  # Redis 服务
+  redis:
+    image: redis:7-alpine
+    container_name: meea-icey-redis-prod
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"  # 只允许本地访问
+    volumes:
+      - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - meea-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # 主应用服务
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: meea-icey-app-prod
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:37080:37080"  # 只允许本地访问
+    volumes:
+      - app_data:/app/data
+      - ./config.yaml:/app/config.yaml:ro
+      - ./my_ed25519_key:/app/my_ed25519_key:ro
+      - ./my_ed25519_key.pub:/app/my_ed25519_key.pub:ro
+    environment:
+      - TZ=Asia/Shanghai
+      - GIN_MODE=release
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - meea-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:37080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # Nginx 反向代理（可选）
+  nginx:
+    image: nginx:alpine
+    container_name: meea-icey-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro  # SSL 证书目录
+    depends_on:
+      - app
+    networks:
+      - meea-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  redis_data:
+    driver: local
+  app_data:
+    driver: local
+
+networks:
+  meea-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16 

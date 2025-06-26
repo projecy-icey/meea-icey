@@ -1,0 +1,45 @@
+# Go 构建产物
+bin/
+build/
+dist/
+*.exe
+*.out
+*.a
+*.so
+
+# IDE 配置
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 日志和临时文件
+*.log
+logs/
+tmp/
+temp/
+
+# 配置和密钥
+config.local.yaml
+.env
+.env.local
+/my_ed25519_key
+/my_ed25519_key.pub
+
+# Docker Compose 本地覆盖
+docker-compose.override.yml
+
+# 测试和文档
+*_test.go
+test/
+docs/
+*.md
+
+# 其他
+node_modules/
+vendor/
