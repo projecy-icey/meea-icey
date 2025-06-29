@@ -17,6 +17,23 @@ import (
 	"meea-icey/services"
 )
 
+// CORS中间件
+func CORSMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Credentials", "true")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Header("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
+	}
+}
+
 func main() {
 	// 优先加载本地开发配置
 	configPath := "config.yaml"
@@ -70,6 +87,10 @@ func main() {
 
 	// 设置路由
 	router := gin.Default()
+	
+	// 添加CORS中间件
+	router.Use(CORSMiddleware())
+	
 	router.Any("/wechat", func(c *gin.Context) {
 		wechatController.HandleMessage(c.Writer, c.Request)
 	})
