@@ -91,6 +91,11 @@ func main() {
 	// 添加CORS中间件
 	router.Use(CORSMiddleware())
 	
+	// 健康检查接口
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok"})
+	})
+	
 	router.Any("/wechat", func(c *gin.Context) {
 		wechatController.HandleMessage(c.Writer, c.Request)
 	})
