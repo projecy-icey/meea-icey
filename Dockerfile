@@ -23,16 +23,19 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/server
 # 第二阶段：运行时
 FROM alpine:latest
 
+# 创建非 root 用户
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -u 1001 -S appuser -G appgroup
+
 # 安装运行时依赖
 RUN apk --no-cache add ca-certificates tzdata git git-lfs openssh-client
 
 # 创建 /root/.ssh 目录并生成 known_hosts
 RUN mkdir -p /root/.ssh \
-    && ssh-keyscan -t rsa,ecdsa,ed25519 github.com > /root/.ssh/known_hosts
-
-# 创建非 root 用户
-RUN addgroup -g 1001 -S appgroup && \
-    adduser -u 1001 -S appuser -G appgroup
+    && ssh-keyscan -t rsa,ecdsa,ed25519 github.com > /root/.ssh/known_hosts \
+    && chmod 755 /root/.ssh \
+    && chmod 644 /root/.ssh/known_hosts \
+    && chown -R appuser:appgroup /root/.ssh
 
 # 设置工作目录
 WORKDIR /app
