@@ -30,12 +30,10 @@ RUN addgroup -g 1001 -S appgroup && \
 # 安装运行时依赖
 RUN apk --no-cache add ca-certificates tzdata git git-lfs openssh-client
 
-# 创建 /root/.ssh 目录并生成 known_hosts
-RUN mkdir -p /root/.ssh \
-    && ssh-keyscan -t rsa,ecdsa,ed25519 github.com > /root/.ssh/known_hosts \
-    && chmod 755 /root/.ssh \
-    && chmod 644 /root/.ssh/known_hosts \
-    && chown -R appuser:appgroup /root/.ssh
+# 创建 /app/.ssh 目录并生成 known_hosts
+RUN mkdir -p /app/.ssh \
+    && ssh-keyscan -t rsa,ecdsa,ed25519 github.com > /app/.ssh/known_hosts \
+    && chown -R appuser:appgroup /app/.ssh
 
 # 设置工作目录
 WORKDIR /app

@@ -18,26 +18,29 @@ import (
 
 // GitService 封装Git相关操作
 type GitService struct {
-	clonePath    string
+	clonePath     string
 	repositoryURL string
-	sshKey       string
+	sshKey        string
 }
 
 // NewGitService 创建GitService实例
 // 参数:
-//   clonePath: 仓库克隆目标路径
-//   repositoryURL: 远程仓库URL
-//   sshKey: SSH私钥内容
+//
+//	clonePath: 仓库克隆目标路径
+//	repositoryURL: 远程仓库URL
+//	sshKey: SSH私钥内容
+//
 // 返回:
-//   初始化成功的GitService实例和nil错误；若SSH密钥为空则返回nil和错误信息
+//
+//	初始化成功的GitService实例和nil错误；若SSH密钥为空则返回nil和错误信息
 func NewGitService(clonePath, repositoryURL, sshKey string) (*GitService, error) {
 	if sshKey == "" {
 		return nil, fmt.Errorf("SSH密钥不能为空")
 	}
 	return &GitService{
-		clonePath:    clonePath,
+		clonePath:     clonePath,
 		repositoryURL: repositoryURL,
-		sshKey:       sshKey,
+		sshKey:        sshKey,
 	}, nil
 }
 
@@ -63,11 +66,28 @@ func (g *GitService) getSSHAuth() (*gitssh.PublicKeys, error) {
 		return nil, fmt.Errorf("解析SSH私钥失败: %v", err)
 	}
 
-	// 创建认证配置
+	// 优先级：环境变量 > /app/.ssh/known_hosts > ~/.ssh/known_hosts
+	knownHostsPath := os.Getenv("SSH_KNOWN_HOSTS")
+	if knownHostsPath == "" {
+		if _, err := os.Stat("/app/.ssh/known_hosts"); err == nil {
+			knownHostsPath = "/app/.ssh/known_hosts"
+		} else {
+			home, err := os.UserHomeDir()
+			if err == nil {
+				knownHostsPath = home + "/.ssh/known_hosts"
+			}
+		}
+	}
+	callback, err := gitssh.NewKnownHostsCallback(knownHostsPath)
+	if err != nil {
+		return nil, fmt.Errorf("加载 known_hosts 失败: %v", err)
+	}
+
 	auth := &gitssh.PublicKeys{
 		User:   "git",
 		Signer: key,
 	}
+	auth.HostKeyCallback = callback
 
 	return auth, nil
 }
@@ -77,24 +97,27 @@ func (g *GitService) BuildSubjectPath(subject string) (string, string) {
 	if len(subject) < 6 {
 		return "", ""
 	}
-	
+
 	part1 := subject[:2]
 	part2 := subject[2:4]
 	part3 := subject[4:6]
-	
+
 	// 完整路径
 	fullPath := filepath.Join(g.clonePath, "icey-storage", part1, part2, part3, subject)
 	// 相对路径
 	relativePath := filepath.Join(part1, part2, part3, subject)
-	
+
 	return fullPath, relativePath
 }
 
 // CloneRepository 使用SSH认证克隆Git仓库
 // 参数:
-//   dirName: 目标目录路径
+//
+//	dirName: 目标目录路径
+//
 // 返回:
-//   克隆成功返回nil；若SSH密钥未配置或克隆失败则返回相应错误
+//
+//	克隆成功返回nil；若SSH密钥未配置或克隆失败则返回相应错误
 func (g *GitService) CloneRepository() error {
 	if g.sshKey == "" {
 		return errors.New("SSH密钥未配置")
@@ -134,9 +157,12 @@ func (g *GitService) CloneRepository() error {
 
 // PullRepository 拉取Git仓库最新代码
 // 参数:
-//   dirName: 本地仓库目录名称
+//
+//	dirName: 本地仓库目录名称
+//
 // 返回:
-//   拉取成功返回nil；若目录不存在、仓库验证失败或拉取失败则返回相应错误
+//
+//	拉取成功返回nil；若目录不存在、仓库验证失败或拉取失败则返回相应错误
 func (g *GitService) PullRepository(dirName string) error {
 	if g.sshKey == "" {
 		return fmt.Errorf("SSH密钥未配置")
@@ -354,11 +380,11 @@ func (g *GitService) CommitChanges(repoDir string, files []string, commitMsg str
 	if err != nil {
 		return fmt.Errorf("获取工作区失败: %v", err)
 	}
-	
+
 	// 处理文件变更（添加新文件或删除已删除的文件）
 	for _, file := range files {
 		fullPath := filepath.Join(fullRepoPath, file)
-		
+
 		// 检查文件是否存在
 		if _, err := os.Stat(fullPath); os.IsNotExist(err) {
 			// 文件不存在，说明是删除操作，使用git rm
@@ -372,7 +398,7 @@ func (g *GitService) CommitChanges(repoDir string, files []string, commitMsg str
 			}
 		}
 	}
-	
+
 	// 提交变更
 	_, err = w.Commit(commitMsg, &git.CommitOptions{
 		Author: &object.Signature{
@@ -384,13 +410,13 @@ func (g *GitService) CommitChanges(repoDir string, files []string, commitMsg str
 	if err != nil {
 		return fmt.Errorf("提交变更失败: %v", err)
 	}
-	
+
 	// 获取SSH认证
 	auth, err := g.getSSHAuth()
 	if err != nil {
 		return err
 	}
-	
+
 	// 推送变更
 	err = r.Push(&git.PushOptions{
 		Auth: auth,
@@ -398,7 +424,7 @@ func (g *GitService) CommitChanges(repoDir string, files []string, commitMsg str
 	if err != nil && err != git.NoErrAlreadyUpToDate {
 		return fmt.Errorf("推送变更失败: %v", err)
 	}
-	
+
 	return nil
 }
 
