@@ -48,6 +48,9 @@ RUN mkdir -p /app/data && chown -R appuser:appgroup /app
 # 切换到非 root 用户
 USER appuser
 
+ENV HOME=/app
+ENV GIT_SSH_COMMAND="ssh -i /app/my_ed25519_key -o IdentitiesOnly=yes -o UserKnownHostsFile=/app/.ssh/known_hosts"
+
 # 暴露端口
 EXPOSE 37080
 
