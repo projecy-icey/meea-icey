@@ -29,6 +29,7 @@ RUN addgroup -g 1001 -S appgroup && \
 
 # 安装运行时依赖
 RUN apk --no-cache add ca-certificates tzdata git git-lfs openssh-client
+RUN git lfs install --system
 
 # 创建 /app/.ssh 目录并生成 known_hosts
 RUN mkdir -p /app/.ssh \
