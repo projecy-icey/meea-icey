@@ -246,7 +246,7 @@ func (g *GitService) LockFile(filePath string) error {
 		sshKeyPath = filepath.Join(repoRoot, sshKeyPath)
 	}
 	cmd.Env = append(os.Environ(),
-		"GIT_SSH_COMMAND=ssh -i '"+sshKeyPath+"' -o IdentitiesOnly=yes",
+		"GIT_SSH_COMMAND=ssh -i '"+sshKeyPath+"' -o IdentitiesOnly=yes -o UserKnownHostsFile=/app/.ssh/known_hosts",
 	)
 	fmt.Printf("[LockFile] 执行命令: cd %s && GIT_SSH_COMMAND=ssh -i '%s' -o IdentitiesOnly=yes git lfs lock %s\n", repoRoot, sshKeyPath, relPath)
 	output, err := cmd.CombinedOutput()
@@ -257,7 +257,7 @@ func (g *GitService) LockFile(filePath string) error {
 		lockCmd := exec.Command("git", "lfs", "locks")
 		lockCmd.Dir = repoRoot
 		lockCmd.Env = append(os.Environ(),
-			"GIT_SSH_COMMAND=ssh -i '"+sshKeyPath+"' -o IdentitiesOnly=yes",
+			"GIT_SSH_COMMAND=ssh -i '"+sshKeyPath+"' -o IdentitiesOnly=yes -o UserKnownHostsFile=/app/.ssh/known_hosts",
 		)
 		locksOut, _ := lockCmd.CombinedOutput()
 		lines := strings.Split(string(locksOut), "\n")
@@ -275,7 +275,7 @@ func (g *GitService) LockFile(filePath string) error {
 		userCmd := exec.Command("git", "config", "user.name")
 		userCmd.Dir = repoRoot
 		userCmd.Env = append(os.Environ(),
-			"GIT_SSH_COMMAND=ssh -i '"+sshKeyPath+"' -o IdentitiesOnly=yes",
+			"GIT_SSH_COMMAND=ssh -i '"+sshKeyPath+"' -o IdentitiesOnly=yes -o UserKnownHostsFile=/app/.ssh/known_hosts",
 		)
 		userOut, _ := userCmd.CombinedOutput()
 		currentUser := strings.TrimSpace(string(userOut))
@@ -284,7 +284,7 @@ func (g *GitService) LockFile(filePath string) error {
 			unlockCmd := exec.Command("git", "lfs", "unlock", relPath)
 			unlockCmd.Dir = repoRoot
 			unlockCmd.Env = append(os.Environ(),
-				"GIT_SSH_COMMAND=ssh -i '"+sshKeyPath+"' -o IdentitiesOnly=yes",
+				"GIT_SSH_COMMAND=ssh -i '"+sshKeyPath+"' -o IdentitiesOnly=yes -o UserKnownHostsFile=/app/.ssh/known_hosts",
 			)
 			unlockOut, unlockErr := unlockCmd.CombinedOutput()
 			fmt.Printf("[LockFile] unlock输出: %s\n", string(unlockOut))
@@ -295,7 +295,7 @@ func (g *GitService) LockFile(filePath string) error {
 			cmd2 := exec.Command("git", "lfs", "lock", relPath)
 			cmd2.Dir = repoRoot
 			cmd2.Env = append(os.Environ(),
-				"GIT_SSH_COMMAND=ssh -i '"+sshKeyPath+"' -o IdentitiesOnly=yes",
+				"GIT_SSH_COMMAND=ssh -i '"+sshKeyPath+"' -o IdentitiesOnly=yes -o UserKnownHostsFile=/app/.ssh/known_hosts",
 			)
 			output2, err2 := cmd2.CombinedOutput()
 			fmt.Printf("[LockFile] retry lock输出: %s\n", string(output2))
@@ -331,7 +331,7 @@ func (g *GitService) UnlockFile(filePath string) error {
 		sshKeyPath = filepath.Join(repoRoot, sshKeyPath)
 	}
 	cmd.Env = append(os.Environ(),
-		"GIT_SSH_COMMAND=ssh -i '"+sshKeyPath+"' -o IdentitiesOnly=yes",
+		"GIT_SSH_COMMAND=ssh -i '"+sshKeyPath+"' -o IdentitiesOnly=yes -o UserKnownHostsFile=/app/.ssh/known_hosts",
 	)
 	output, err := cmd.CombinedOutput()
 	if err != nil && strings.Contains(string(output), "Cannot unlock file with uncommitted changes") {
@@ -339,7 +339,7 @@ func (g *GitService) UnlockFile(filePath string) error {
 		forceCmd := exec.Command("git", "lfs", "unlock", "--force", relPath)
 		forceCmd.Dir = repoRoot
 		forceCmd.Env = append(os.Environ(),
-			"GIT_SSH_COMMAND=ssh -i '"+sshKeyPath+"' -o IdentitiesOnly=yes",
+			"GIT_SSH_COMMAND=ssh -i '"+sshKeyPath+"' -o IdentitiesOnly=yes -o UserKnownHostsFile=/app/.ssh/known_hosts",
 		)
 		forceOut, forceErr := forceCmd.CombinedOutput()
 		if forceErr != nil {
@@ -446,7 +446,7 @@ func (g *GitService) IsFileLocked(filePath string) (bool, error) {
 		sshKeyPath = filepath.Join(repoRoot, sshKeyPath)
 	}
 	cmd.Env = append(os.Environ(),
-		"GIT_SSH_COMMAND=ssh -i '"+sshKeyPath+"' -o IdentitiesOnly=yes",
+		"GIT_SSH_COMMAND=ssh -i '"+sshKeyPath+"' -o IdentitiesOnly=yes -o UserKnownHostsFile=/app/.ssh/known_hosts",
 	)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
