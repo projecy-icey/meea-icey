@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-redis/redis/v8"
+	"log"
 	"meea-icey/models"
 )
 
@@ -39,6 +40,10 @@ func (s *VerifyService) VerifyCode(subject, code string) (bool, error) {
 		return false, fmt.Errorf("获取验证码使用次数失败: %v", err)
 	}
 	if count >= s.config.Verification.MaxAttempts {
+		// 删除超过使用次数限制的验证码
+		if err := s.redisClient.Del(context.Background(), redisKey).Err(); err != nil {
+			log.Printf("删除过期验证码失败: %v", err)
+		}
 		return false, nil
 	}
 
