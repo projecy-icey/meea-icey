@@ -30,6 +30,8 @@ config.local.yaml
 .env.local
 /my_ed25519_key
 /my_ed25519_key.pub
+keys/
+*.pem
 
 # Docker Compose 本地覆盖
 docker-compose.override.yml
