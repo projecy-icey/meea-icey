@@ -32,3 +32,11 @@ server:
 logging:
   level: "${LOG_LEVEL:-info}"
   format: "${LOG_FORMAT:-json}"
+
+# 许可证系统配置
+license:
+  # RSA密钥文件路径
+  commPrivateKeyPath: "${COMM_PRIVATE_KEY_PATH:-keys/comm_private_key.pem}"
+  signPrivateKeyPath: "${SIGN_PRIVATE_KEY_PATH:-keys/sign_private_key.pem}"
+  # 调试模式 (生产环境设为false)
+  debugMode: ${LICENSE_DEBUG_MODE:-true}

@@ -13,6 +13,9 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"meea-icey/controllers"
+	"meea-icey/internal/crypto"
+	"meea-icey/internal/license"
+	"meea-icey/internal/verification"
 	"meea-icey/models"
 	"meea-icey/services"
 )
@@ -85,17 +88,43 @@ func main() {
 	deleteController := controllers.NewDeleteController(deleteService)
 	voteController := controllers.NewVoteController(voteService)
 
+	// 初始化许可证系统
+	cryptoService, err := crypto.NewService(
+		config.License.CommPrivateKeyPath,
+		config.License.SignPrivateKeyPath,
+	)
+	if err != nil {
+		log.Printf("警告: 许可证系统初始化失败: %v", err)
+		log.Println("许可证功能将不可用")
+	}
+
+	var licenseHandler *license.Handler
+	var licenseAdminHandler *license.AdminHandler
+	var licenseVerificationService *verification.LicenseVerificationService
+
+	if cryptoService != nil {
+		// 初始化许可证专用验证服务
+		licenseVerificationService = verification.NewLicenseVerificationService(redisClient, config.License.DebugMode)
+
+		// 初始化许可证服务
+		licenseService := license.NewService(cryptoService, licenseVerificationService)
+		licenseHandler = license.NewHandler(licenseService)
+
+		// 初始化许可证管理服务
+		licenseAdminHandler = license.NewAdminHandler(licenseVerificationService)
+	}
+
 	// 设置路由
 	router := gin.Default()
-	
+
 	// 添加CORS中间件
 	router.Use(CORSMiddleware())
-	
+
 	// 健康检查接口
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
-	
+
 	router.Any("/wechat", func(c *gin.Context) {
 		wechatController.HandleMessage(c.Writer, c.Request)
 	})
@@ -105,6 +134,26 @@ func main() {
 	router.POST("/commit", commitController.HandleCommit)
 	router.POST("/delete", deleteController.HandleDelete)
 	router.POST("/vote", voteController.HandleVote)
+
+	// 许可证API路由
+	if licenseHandler != nil {
+		v1 := router.Group("/api/v1")
+		{
+			v1.POST("/license", licenseHandler.RequestLicense)
+		}
+
+		// 许可证管理API路由
+		if licenseAdminHandler != nil {
+			admin := router.Group("/api/admin")
+			{
+				admin.POST("/license/generate-code", licenseAdminHandler.GenerateLicenseCode)
+			}
+		}
+
+		log.Println("许可证系统已启用")
+	} else {
+		log.Println("许可证系统未启用")
+	}
 
 	// 启动HTTP服务器
 	listenAddr := fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port)

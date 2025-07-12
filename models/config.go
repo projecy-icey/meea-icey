@@ -31,4 +31,9 @@ type Config struct {
 		Level  string `yaml:"level"`
 		Format string `yaml:"format"`
 	} `yaml:"logging"`
+	License struct {
+		CommPrivateKeyPath string `yaml:"commPrivateKeyPath"`
+		SignPrivateKeyPath string `yaml:"signPrivateKeyPath"`
+		DebugMode          bool   `yaml:"debugMode"`
+	} `yaml:"license"`
 }
