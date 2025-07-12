@@ -42,8 +42,8 @@ WORKDIR /app
 # 从 builder 阶段复制编译好的应用
 COPY --from=builder /app/main .
 
-# 创建数据目录
-RUN mkdir -p /app/data && chown -R appuser:appgroup /app
+# 创建数据目录和密钥目录
+RUN mkdir -p /app/data /app/keys && chown -R appuser:appgroup /app
 
 # 切换到非 root 用户
 USER appuser
